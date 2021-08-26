@@ -1,6 +1,7 @@
 package io.github.andrielson.spring_boot_forum.service;
 
 import io.github.andrielson.spring_boot_forum.dto.RegisterRequest;
+import io.github.andrielson.spring_boot_forum.exceptions.ForumException;
 import io.github.andrielson.spring_boot_forum.model.NotificationEmail;
 import io.github.andrielson.spring_boot_forum.model.User;
 import io.github.andrielson.spring_boot_forum.model.VerificationToken;
@@ -28,7 +29,7 @@ public class AuthService {
 
     @Transactional
     public void signup(RegisterRequest registerRequest) {
-        User user = new User();
+        var user = new User();
         user.setUsername(registerRequest.getUsername());
         user.setEmail(registerRequest.getEmail());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
@@ -37,7 +38,7 @@ public class AuthService {
 
         userRepository.save(user);
 
-        String token = generateVerificationToken(user);
+        var token = generateVerificationToken(user);
         mailService.sendMail(
                 new NotificationEmail(
                         "Please activate your account",
@@ -50,13 +51,28 @@ public class AuthService {
     }
 
     private String generateVerificationToken(User user) {
-        String token = UUID.randomUUID().toString();
-        VerificationToken verificationToken = new VerificationToken();
+        var token = UUID.randomUUID().toString();
+        var verificationToken = new VerificationToken();
         verificationToken.setToken(token);
         verificationToken.setUser(user);
 
         verificationTokenRepository.save(verificationToken);
 
         return token;
+    }
+
+    public void verifyAccount(String token) {
+        var optionalVerificationToken = verificationTokenRepository.findByToken(token);
+        var verificationToken = optionalVerificationToken.orElseThrow(() -> new ForumException("Invalid Token"));
+        fetchUserAndEnable(verificationToken);
+    }
+
+    @Transactional
+    private void fetchUserAndEnable(VerificationToken verificationToken) {
+        var username = verificationToken.getUser().getUsername();
+        var optionalUser = userRepository.findByUsername(username);
+        var user = optionalUser.orElseThrow(() -> new ForumException("User not found with name - " + username));
+        user.setEnabled(true);
+        userRepository.save(user);
     }
 }
