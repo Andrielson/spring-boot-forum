@@ -12,10 +12,11 @@ import java.util.Objects;
 @Getter
 @Setter
 @ToString
-@Entity
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Entity
+@Table(name = "posts")
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,7 +44,7 @@ public class Post {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id", referencedColumnName = "id")
     @ToString.Exclude
-    private Subreddit subreddit;
+    private Subforum subforum;
 
     @Override
     public boolean equals(Object o) {

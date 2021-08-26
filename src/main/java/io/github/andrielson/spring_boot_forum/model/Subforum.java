@@ -9,14 +9,15 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
-@Entity
 @Getter
 @Setter
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Subreddit {
+@Entity
+@Table(name = "subforums")
+public class Subforum {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -41,9 +42,9 @@ public class Subreddit {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        Subreddit subreddit = (Subreddit) o;
+        Subforum subforum = (Subforum) o;
 
-        return Objects.equals(id, subreddit.id);
+        return Objects.equals(id, subforum.id);
     }
 
     @Override
