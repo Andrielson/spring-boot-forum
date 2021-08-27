@@ -1,0 +1,1 @@
+keytool -genkey -alias springbootforum -keyalg RSA -keystore springbootforum.jks -keysize 4096
