@@ -1,5 +1,7 @@
 package io.github.andrielson.spring_boot_forum.service;
 
+import io.github.andrielson.spring_boot_forum.dto.AuthenticationResponse;
+import io.github.andrielson.spring_boot_forum.dto.LoginRequest;
 import io.github.andrielson.spring_boot_forum.dto.RegisterRequest;
 import io.github.andrielson.spring_boot_forum.exceptions.ForumException;
 import io.github.andrielson.spring_boot_forum.model.NotificationEmail;
@@ -7,7 +9,11 @@ import io.github.andrielson.spring_boot_forum.model.User;
 import io.github.andrielson.spring_boot_forum.model.VerificationToken;
 import io.github.andrielson.spring_boot_forum.repository.UserRepository;
 import io.github.andrielson.spring_boot_forum.repository.VerificationTokenRepository;
+import io.github.andrielson.spring_boot_forum.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,12 +26,11 @@ import java.util.UUID;
 public class AuthService {
 
     private final MailService mailService;
-
     private final PasswordEncoder passwordEncoder;
-
     private final UserRepository userRepository;
-
     private final VerificationTokenRepository verificationTokenRepository;
+    private final AuthenticationManager authenticationManager;
+    private final JwtProvider jwtProvider;
 
     @Transactional
     public void signup(RegisterRequest registerRequest) {
@@ -39,15 +44,14 @@ public class AuthService {
         userRepository.save(user);
 
         var token = generateVerificationToken(user);
-        mailService.sendMail(
-                new NotificationEmail(
-                        "Please activate your account",
-                        user.getEmail(),
-                        "Thank you for signing up to Spring Reddit, " +
-                                "please click on the below url to activate your account: " +
-                                "http://localhost:8080/api/auth/accountVerification/" + token
-                )
+        var notificationEmail = new NotificationEmail(
+                "Please activate your account",
+                user.getEmail(),
+                "Thank you for signing up to Spring Reddit, " +
+                        "please click on the below url to activate your account: " +
+                        "http://localhost:8080/api/auth/accountVerification/" + token
         );
+        mailService.sendMail(notificationEmail);
     }
 
     private String generateVerificationToken(User user) {
@@ -74,5 +78,15 @@ public class AuthService {
         var user = optionalUser.orElseThrow(() -> new ForumException("User not found with name - " + username));
         user.setEnabled(true);
         userRepository.save(user);
+    }
+
+    public AuthenticationResponse login(LoginRequest loginRequest) {
+        var username = loginRequest.getUsername();
+        var password = loginRequest.getPassword();
+        var authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
+        var authentication = authenticationManager.authenticate(authenticationToken);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        var token = jwtProvider.generateToken(authentication);
+        return new AuthenticationResponse(token,username);
     }
 }
