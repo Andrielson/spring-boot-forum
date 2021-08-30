@@ -1,10 +1,26 @@
 package io.github.andrielson.spring_boot_forum.model;
 
+import io.github.andrielson.spring_boot_forum.exceptions.ForumException;
+
+import java.util.Arrays;
+
 public enum VoteType {
     UPVOTE(1),
     DOWNVOTE(-1);
 
-    VoteType(int direction) {
+    private int direction;
 
+    VoteType(int direction) {
+    }
+
+    public static VoteType lookup(Integer direction) {
+        return Arrays.stream(VoteType.values())
+                .filter(value -> value.getDirection().equals(direction))
+                .findAny()
+                .orElseThrow(() -> new ForumException("Vote not found"));
+    }
+
+    public Integer getDirection() {
+        return direction;
     }
 }
