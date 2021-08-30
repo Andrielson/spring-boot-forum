@@ -27,4 +27,9 @@ public class SubforumController {
     public ResponseEntity<List<SubforumDto>> getAllSubforums() {
         return ResponseEntity.ok(subforumService.getAll());
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<SubforumDto> getSubforum(@PathVariable Long id) {
+        return ResponseEntity.ok(subforumService.getSubforum(id));
+    }
 }

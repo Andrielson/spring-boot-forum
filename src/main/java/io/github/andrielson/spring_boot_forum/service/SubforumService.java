@@ -1,7 +1,8 @@
 package io.github.andrielson.spring_boot_forum.service;
 
 import io.github.andrielson.spring_boot_forum.dto.SubforumDto;
-import io.github.andrielson.spring_boot_forum.model.Subforum;
+import io.github.andrielson.spring_boot_forum.exceptions.ForumException;
+import io.github.andrielson.spring_boot_forum.mapper.SubforumMapper;
 import io.github.andrielson.spring_boot_forum.repository.SubforumRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,11 +19,12 @@ import java.util.stream.Collectors;
 public class SubforumService {
 
     private final SubforumRepository subforumRepository;
+    private final SubforumMapper subforumMapper;
 
     @Transactional
     public @NonNull
     SubforumDto save(@NonNull SubforumDto subforumDto) {
-        var subforum = subforumRepository.save(mapSubforumDto(subforumDto));
+        var subforum = subforumRepository.save(subforumMapper.mapDtoToSubforum(subforumDto));
         subforumDto.setId(subforum.getId());
         return subforumDto;
     }
@@ -31,25 +33,13 @@ public class SubforumService {
     public List<SubforumDto> getAll() {
         return subforumRepository.findAll()
                 .stream()
-                .map(this::mapToDto)
+                .map(subforumMapper::mapSubforumToDto)
                 .collect(Collectors.toList());
     }
 
-    private @NonNull
-    Subforum mapSubforumDto(@NonNull SubforumDto subforumDto) {
-        return Subforum.builder()
-                .name(subforumDto.getName())
-                .description(subforumDto.getDescription())
-                .build();
-    }
-
-    private @NonNull
-    SubforumDto mapToDto(@NonNull Subforum subforum) {
-        return SubforumDto.builder()
-                .id(subforum.getId())
-                .name(subforum.getName())
-                .description(subforum.getDescription())
-                .numberOfPosts(subforum.getPosts().size())
-                .build();
+    public SubforumDto getSubforum(Long id) {
+        var subforum = subforumRepository.findById(id)
+                .orElseThrow(() -> new ForumException("No subforum found with ID"));
+        return subforumMapper.mapSubforumToDto(subforum);
     }
 }
